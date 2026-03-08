@@ -1,0 +1,188 @@
+body, html {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background-color: #050505;
+    font-family: 'Playfair Display', serif;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+#game-wrapper {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    padding: 2.5%;
+    box-sizing: border-box;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* The mahogany border */
+#game-container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    background-color: #1e3822; /* Fallback */
+    border: 24px solid #3e1b12;
+    border-image: linear-gradient(45deg, #2b110a, #4a2116, #3e1b12, #5c2c1f) 1;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.8), inset 0 0 50px rgba(0,0,0,0.9);
+    cursor: crosshair;
+    overflow: hidden;
+}
+
+canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+
+#backgroundCanvas { z-index: 1; }
+#debrisCanvas { z-index: 2; pointer-events: none; }
+#gameCanvas { z-index: 5; }
+
+#ui-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 10;
+    pointer-events: none;
+    overflow: hidden;
+}
+
+#ui-hud {
+    position: absolute;
+    top: 20px;
+    left: 30px;
+    right: 30px;
+    display: flex;
+    justify-content: space-between;
+    pointer-events: none;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+}
+
+#score-display {
+    color: #e0cca0; /* Brass */
+    font-size: 36px;
+    font-weight: 700;
+}
+
+#wave-display {
+    color: #a0cce0;
+    font-size: 32px;
+    font-weight: 700;
+}
+
+#combo-display {
+    position: absolute;
+    top: 70px;
+    left: 30px;
+    color: #ff6b35; 
+    font-size: 24px;
+    font-weight: bold;
+    font-style: italic;
+    text-shadow: 1px 1px 3px rgba(0,0,0,0.8);
+    opacity: 0;
+    transition: opacity 0.2s, transform 0.2s;
+    transform: scale(0.8);
+}
+
+#combo-display.active {
+    opacity: 1;
+    transform: scale(1);
+}
+
+.screen {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.4s;
+    z-index: 20;
+}
+
+.screen.active {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+h1 {
+    color: #deb887; /* Light burlywood */
+    font-size: 72px;
+    margin-bottom: 20px;
+    text-shadow: 0 4px 20px rgba(222, 184, 135, 0.4);
+    letter-spacing: 4px;
+    font-style: italic;
+    text-align: center;
+}
+
+p {
+    color: #e8e8e8;
+    font-size: 22px;
+    margin-bottom: 10px;
+    text-align: center;
+}
+
+.hint {
+    color: #ff9b71;
+    font-style: italic;
+    margin-bottom: 50px;
+    max-width: 600px;
+    line-height: 1.4;
+}
+
+button {
+    background: linear-gradient(to bottom, #d4af37, #996515); /* Gold gradient */
+    border: 2px solid #5c430e;
+    color: #1a1a1a;
+    font-family: 'Playfair Display', serif;
+    font-size: 28px;
+    font-weight: bold;
+    padding: 15px 50px;
+    border-radius: 4px;
+    cursor: pointer;
+    box-shadow: 0 6px 15px rgba(0,0,0,0.6), inset 0 2px 5px rgba(255,255,255,0.4);
+    transition: all 0.2s;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+
+button:hover {
+    background: linear-gradient(to bottom, #f3d05e, #b8860b);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.8), inset 0 2px 5px rgba(255,255,255,0.5);
+}
+
+button:active {
+    transform: translateY(1px);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.5), inset 0 1px 3px rgba(0,0,0,0.3);
+}
+
+/* Vignette lighting overlay */
+#lighting-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    background: radial-gradient(circle at center, transparent 30%, rgba(0,0,0,0.8) 100%);
+    z-index: 8;
+}

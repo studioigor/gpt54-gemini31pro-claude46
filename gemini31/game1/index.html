@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Сад Лунной Росы</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="game-container">
+        <canvas id="gameCanvas"></canvas>
+        <div id="ui-layer">
+            <div id="main-menu" class="screen active">
+                <h1>Сад Лунной Росы</h1>
+                <p>Оживите сад каплей света.</p>
+                <p>Управление:<br>Движение за курсором/пальцем.<br>Зажмите, чтобы оставить росный след и оживить бутоны.<br>Отпустите для рывка.</p>
+                <button id="btn-start">Начать</button>
+            </div>
+            <div id="hud" class="screen">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progress-fill"></div>
+                </div>
+                <div class="light-indicator" id="light-indicator">Свет: 100%</div>
+            </div>
+            <div id="victory-screen" class="screen">
+                <h2>Сад проснулся</h2>
+                <button id="btn-restart">Играть снова</button>
+            </div>
+            <div id="defeat-screen" class="screen">
+                <h2>Сад высох</h2>
+                <button id="btn-retry">Попробовать снова</button>
+            </div>
+        </div>
+    </div>
+    <script type="module" src="main.js"></script>
+</body>
+</html>

@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Brass & Velvet</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="game-wrapper">
+        <div id="game-container">
+            <!-- Order of canvases: background -> debris -> lighting/fx -> dynamic game -->
+            <canvas id="backgroundCanvas"></canvas>
+            <canvas id="debrisCanvas"></canvas>
+            <canvas id="gameCanvas"></canvas>
+            
+            <div id="lighting-overlay"></div>
+            
+            <div id="ui-layer">
+                <div id="ui-hud">
+                    <div id="score-display">Score: <span id="score">0</span></div>
+                    <div id="wave-display"><span id="wave">Wave 1</span></div>
+                </div>
+                <div id="combo-display"></div>
+                
+                <div id="main-menu" class="screen active">
+                    <h1>Brass & Velvet</h1>
+                    <p>WASD to move. Mouse to aim. Click to shoot.</p>
+                    <p class="hint">Ricochets heat up bullets for piercing and massive damage!</p>
+                    <button id="start-btn">Play</button>
+                </div>
+                
+                <div id="game-over" class="screen">
+                    <h1>Game Over</h1>
+                    <p>Your journey ends among the shattered gears.</p>
+                    <p>Final Score: <span id="final-score">0</span></p>
+                    <button id="restart-btn">Restart</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="main.js"></script>
+</body>
+</html>

@@ -1,0 +1,130 @@
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body, html {
+    width: 100%;
+    height: 100%;
+    background-color: #111a19; /* dark jade / moss background */
+    font-family: "Georgia", serif; /* bookish feel */
+    overflow: hidden;
+    color: #e4e2d2;
+    touch-action: none;
+}
+
+#game-container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+}
+
+canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+/* UI */
+#ui-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none; /* Let clicks pass through unless active */
+}
+
+.screen {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: rgba(17, 26, 25, 0.85); /* same moss */
+    opacity: 0;
+    transition: opacity 0.5s ease;
+    pointer-events: none;
+}
+
+.screen.active {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* Specific UI elements */
+h1 {
+    font-size: 3rem;
+    color: #fceea7; /* moonlit / soft yellow */
+    text-shadow: 0 0 15px rgba(252, 238, 167, 0.4);
+    margin-bottom: 20px;
+}
+
+p {
+    font-size: 1.2rem;
+    margin-bottom: 10px;
+    text-align: center;
+    color: #a4ceaa; /* pale green */
+}
+
+button {
+    margin-top: 30px;
+    padding: 10px 30px;
+    font-size: 1.5rem;
+    background: transparent;
+    color: #fceea7;
+    border: 2px solid #a4ceaa;
+    border-radius: 50px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.3s;
+}
+
+button:hover {
+    background: rgba(164, 206, 170, 0.2);
+    box-shadow: 0 0 15px rgba(252, 238, 167, 0.5);
+}
+
+/* HUD Element */
+#hud {
+    background: transparent;
+    justify-content: flex-start;
+    padding: 20px;
+    align-items: stretch;
+}
+
+#hud.active {
+    pointer-events: none; /* HUD shouldn't block game */
+}
+
+.progress-bar {
+    width: 50%;
+    height: 6px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+    margin: 0 auto;
+    position: relative;
+}
+
+.progress-fill {
+    height: 100%;
+    width: 0%;
+    background: #fceea7;
+    box-shadow: 0 0 10px #fceea7;
+    border-radius: 3px;
+    transition: width 0.3s linear;
+}
+
+.light-indicator {
+    position: absolute;
+    left: 20px;
+    bottom: 20px;
+    font-size: 1.2rem;
+    color: #fceea7;
+    text-shadow: 0 0 5px rgba(252, 238, 167, 0.6);
+}

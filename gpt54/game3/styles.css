@@ -1,0 +1,109 @@
+:root {
+  color-scheme: dark;
+  --bg: #120a09;
+  --panel: rgba(23, 14, 12, 0.82);
+  --panel-border: rgba(206, 164, 95, 0.4);
+  --text: #f7e4bb;
+  --muted: rgba(247, 228, 187, 0.78);
+  --accent: #d5a248;
+  --shadow: rgba(0, 0, 0, 0.35);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at top, rgba(79, 34, 22, 0.32), transparent 40%),
+    linear-gradient(180deg, #23110e 0%, #120a09 100%);
+  color: var(--text);
+  font-family: "Iowan Old Style", "Baskerville", "Palatino Linotype", "Book Antiqua", serif;
+}
+
+body {
+  position: relative;
+}
+
+#game {
+  display: block;
+  width: 100vw;
+  height: 100vh;
+  cursor: crosshair;
+}
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background:
+    radial-gradient(circle at center, rgba(37, 18, 13, 0.2), rgba(7, 5, 4, 0.72) 70%);
+  backdrop-filter: blur(5px);
+}
+
+.overlay.hidden {
+  display: none;
+}
+
+.overlay-panel {
+  min-width: min(88vw, 420px);
+  padding: 28px 32px 30px;
+  border: 1px solid var(--panel-border);
+  border-radius: 18px;
+  background:
+    linear-gradient(180deg, rgba(63, 35, 24, 0.9), var(--panel));
+  box-shadow:
+    0 22px 80px var(--shadow),
+    inset 0 1px 0 rgba(255, 226, 172, 0.15);
+  text-align: center;
+}
+
+.overlay-kicker {
+  margin-bottom: 8px;
+  color: var(--muted);
+  font-size: 0.72rem;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+}
+
+.overlay-panel h1 {
+  margin: 0 0 12px;
+  font-size: clamp(2rem, 5vw, 2.8rem);
+  font-weight: 600;
+}
+
+.overlay-panel p {
+  margin: 0 0 18px;
+  color: var(--muted);
+  font-size: 1.1rem;
+}
+
+#restart-button {
+  padding: 12px 22px;
+  border: 1px solid rgba(231, 194, 121, 0.75);
+  border-radius: 999px;
+  background:
+    linear-gradient(180deg, #d8ae63, #9f6829);
+  color: #2b150f;
+  font: inherit;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  cursor: pointer;
+  box-shadow:
+    0 8px 30px rgba(0, 0, 0, 0.28),
+    inset 0 1px 0 rgba(255, 241, 213, 0.65);
+}
+
+#restart-button:hover {
+  filter: brightness(1.06);
+}
+
+#restart-button:active {
+  transform: translateY(1px);
+}

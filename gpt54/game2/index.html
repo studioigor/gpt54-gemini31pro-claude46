@@ -1,0 +1,1612 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Бумажный Кораблик</title>
+  <style>
+    :root {
+      --paper: #e5d7b7;
+      --paper-dark: #b79f76;
+      --ink: #2c312c;
+      --shadow: rgba(43, 34, 22, 0.18);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html, body {
+      margin: 0;
+      min-height: 100%;
+      background:
+        radial-gradient(circle at top, rgba(255, 255, 255, 0.5), transparent 45%),
+        linear-gradient(180deg, #f1e8ce, #c7b08a 62%, #aa926f);
+      color: var(--ink);
+      font-family: Georgia, "Times New Roman", serif;
+      overflow: hidden;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: manipulation;
+    }
+
+    body {
+      display: grid;
+      place-items: center;
+    }
+
+    .frame {
+      position: relative;
+      width: min(100vw, 500px);
+      height: 100vh;
+      max-height: 100vh;
+      overflow: hidden;
+      box-shadow:
+        0 18px 40px rgba(60, 43, 20, 0.18),
+        inset 0 0 0 1px rgba(255, 255, 255, 0.35);
+      background: rgba(255, 251, 243, 0.28);
+    }
+
+    canvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+      cursor: crosshair;
+    }
+
+    .hud {
+      position: absolute;
+      inset: 0 0 auto;
+      padding: max(12px, env(safe-area-inset-top)) 14px 10px;
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      pointer-events: none;
+      z-index: 2;
+      color: rgba(41, 42, 36, 0.88);
+      text-shadow: 0 1px 0 rgba(255, 255, 255, 0.35);
+    }
+
+    .hud-card {
+      padding: 10px 12px;
+      min-width: 0;
+      background: rgba(248, 241, 225, 0.42);
+      border: 1px solid rgba(116, 88, 56, 0.16);
+      border-radius: 18px;
+      backdrop-filter: blur(4px);
+      box-shadow: 0 6px 16px rgba(64, 45, 24, 0.08);
+    }
+
+    .hud-card strong,
+    .hud-card span {
+      display: block;
+      line-height: 1.1;
+    }
+
+    .hud-card strong {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      opacity: 0.7;
+      margin-bottom: 4px;
+    }
+
+    .hud-card span {
+      font-size: 1.25rem;
+      white-space: nowrap;
+    }
+
+    .overlay {
+      position: absolute;
+      inset: 0;
+      z-index: 3;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      background:
+        linear-gradient(180deg, rgba(248, 241, 225, 0.42), rgba(133, 158, 168, 0.24)),
+        rgba(255, 248, 236, 0.36);
+      backdrop-filter: blur(6px);
+      transition: opacity 220ms ease;
+    }
+
+    .overlay.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .paper-card {
+      width: min(100%, 360px);
+      padding: 22px 20px 24px;
+      position: relative;
+      background:
+        linear-gradient(180deg, rgba(255, 251, 244, 0.92), rgba(238, 224, 197, 0.9));
+      border-radius: 20px;
+      border: 1px solid rgba(122, 97, 68, 0.24);
+      box-shadow:
+        0 18px 38px rgba(58, 39, 20, 0.16),
+        inset 0 0 26px rgba(255, 255, 255, 0.46);
+      text-align: center;
+    }
+
+    .paper-card::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 34px;
+      height: 34px;
+      background:
+        linear-gradient(135deg, rgba(224, 209, 183, 0.96) 0 49%, rgba(255, 255, 255, 0) 50% 100%);
+      border-top-right-radius: 20px;
+      filter: drop-shadow(-2px 3px 3px rgba(60, 42, 24, 0.14));
+    }
+
+    h1 {
+      margin: 0 0 10px;
+      font-size: clamp(2rem, 7vw, 2.6rem);
+      font-weight: 600;
+      color: #2b3b48;
+      letter-spacing: 0.02em;
+    }
+
+    p {
+      margin: 10px 0;
+      line-height: 1.45;
+      font-size: 0.98rem;
+    }
+
+    .meta {
+      font-size: 0.9rem;
+      opacity: 0.78;
+    }
+
+    button {
+      margin-top: 12px;
+      padding: 12px 24px;
+      border: 0;
+      border-radius: 999px;
+      background:
+        linear-gradient(180deg, #fffef9, #e3d4b1);
+      color: #2f3a3e;
+      font: inherit;
+      font-size: 1rem;
+      cursor: pointer;
+      box-shadow:
+        0 10px 18px rgba(73, 54, 31, 0.16),
+        inset 0 2px 0 rgba(255, 255, 255, 0.78);
+    }
+
+    button:active {
+      transform: translateY(1px);
+    }
+
+    .small {
+      font-size: 0.84rem;
+      opacity: 0.7;
+      margin-top: 14px;
+    }
+  </style>
+</head>
+<body>
+  <div class="frame">
+    <canvas id="game" aria-label="Бумажный Кораблик"></canvas>
+    <div class="hud">
+      <div class="hud-card">
+        <strong>Путь</strong>
+        <span id="score">0 м</span>
+      </div>
+      <div class="hud-card">
+        <strong>Сухость</strong>
+        <span id="dryness">3 / 3</span>
+      </div>
+      <div class="hud-card">
+        <strong>Рекорд</strong>
+        <span id="best">0 м</span>
+      </div>
+    </div>
+    <div id="overlay" class="overlay">
+      <div class="paper-card">
+        <h1 id="overlay-title">Бумажный Кораблик</h1>
+        <p id="overlay-copy">Веди кораблик по дождевому ручью, собирай бумажных спутников и не дай воде размочить складки.</p>
+        <p class="meta" id="overlay-meta">Мышь или касание ведут кораблик. Клавиши A/D и стрелки тоже работают.</p>
+        <button id="overlay-button" type="button">Пустить кораблик</button>
+        <div class="small" id="overlay-small">Звёздочки дают очки, журавлики сушат бумагу, лягушка держит один удар щитом.</div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/tone@15.0.4/build/Tone.js"></script>
+  <script>
+    (function () {
+      const canvas = document.getElementById("game");
+      const ctx = canvas.getContext("2d");
+      const overlay = document.getElementById("overlay");
+      const overlayTitle = document.getElementById("overlay-title");
+      const overlayCopy = document.getElementById("overlay-copy");
+      const overlayMeta = document.getElementById("overlay-meta");
+      const overlayButton = document.getElementById("overlay-button");
+      const overlaySmall = document.getElementById("overlay-small");
+      const scoreEl = document.getElementById("score");
+      const bestEl = document.getElementById("best");
+      const drynessEl = document.getElementById("dryness");
+
+      const CONFIG = {
+        maxWidth: 500,
+        minWidth: 320,
+        minHeight: 480,
+        boatYRatio: 0.72,
+        transitionWindow: 10,
+        baseSpawnGap: [132, 108, 90, 72],
+        collectChance: [0.06, 0.24, 0.31, 0.38],
+        riverWidth: [0.4, 0.58, 0.68, 0.86],
+        speed: [94, 142, 190, 262],
+        meander: [0.08, 0.12, 0.16, 0.11],
+        dryMax: 3,
+        invulnerability: 0.9,
+        shieldDuration: 5,
+        phaseBounds: [30, 90, 180],
+        transitionStarts: [20, 80, 170]
+      };
+
+      const THEMES = [
+        {
+          bgTop: [231, 219, 187],
+          bgBottom: [201, 176, 133],
+          waterA: [111, 150, 199],
+          waterB: [155, 193, 226],
+          bank: [140, 109, 76],
+          bankShadow: [110, 85, 58],
+          accentA: [204, 117, 90],
+          accentB: [171, 155, 86],
+          rain: 0
+        },
+        {
+          bgTop: [212, 197, 153],
+          bgBottom: [144, 158, 117],
+          waterA: [96, 147, 182],
+          waterB: [147, 203, 219],
+          bank: [116, 103, 67],
+          bankShadow: [86, 77, 51],
+          accentA: [174, 128, 88],
+          accentB: [113, 149, 90],
+          rain: 0.12
+        },
+        {
+          bgTop: [177, 197, 149],
+          bgBottom: [109, 145, 118],
+          waterA: [79, 131, 167],
+          waterB: [128, 191, 213],
+          bank: [90, 104, 67],
+          bankShadow: [63, 76, 49],
+          accentA: [219, 152, 105],
+          accentB: [219, 206, 112],
+          rain: 0.22
+        },
+        {
+          bgTop: [91, 112, 142],
+          bgBottom: [37, 60, 87],
+          waterA: [52, 94, 143],
+          waterB: [104, 149, 193],
+          bank: [67, 78, 96],
+          bankShadow: [39, 47, 60],
+          accentA: [202, 184, 113],
+          accentB: [110, 157, 126],
+          rain: 0.52
+        }
+      ];
+
+      const PHASE_NAMES = [
+        "Тротуар",
+        "Канавка",
+        "Парковый ручей",
+        "Река"
+      ];
+
+      const SPAWN_TABLES = {
+        obstacle: [
+          [{ kind: "rock", weight: 1 }],
+          [
+            { kind: "rock", weight: 0.6 },
+            { kind: "ink", weight: 0.4 }
+          ],
+          [
+            { kind: "rock", weight: 0.42 },
+            { kind: "ink", weight: 0.24 },
+            { kind: "whirlpool", weight: 0.2 },
+            { kind: "leaf", weight: 0.14 }
+          ],
+          [
+            { kind: "rock", weight: 0.24 },
+            { kind: "ink", weight: 0.25 },
+            { kind: "whirlpool", weight: 0.31 },
+            { kind: "leaf", weight: 0.2 }
+          ]
+        ],
+        collect: [
+          [{ kind: "star", weight: 1 }],
+          [
+            { kind: "star", weight: 0.72 },
+            { kind: "crane", weight: 0.24 },
+            { kind: "frog", weight: 0.04 }
+          ],
+          [
+            { kind: "star", weight: 0.63 },
+            { kind: "crane", weight: 0.28 },
+            { kind: "frog", weight: 0.09 }
+          ],
+          [
+            { kind: "star", weight: 0.48 },
+            { kind: "crane", weight: 0.28 },
+            { kind: "frog", weight: 0.24 }
+          ]
+        ]
+      };
+
+      function clamp(value, min, max) {
+        return Math.max(min, Math.min(max, value));
+      }
+
+      function lerp(a, b, t) {
+        return a + (b - a) * t;
+      }
+
+      function easeInOut(t) {
+        return t * t * (3 - 2 * t);
+      }
+
+      function pickWeighted(entries) {
+        const total = entries.reduce((sum, entry) => sum + entry.weight, 0);
+        let roll = Math.random() * total;
+        for (const entry of entries) {
+          roll -= entry.weight;
+          if (roll <= 0) {
+            return entry.kind;
+          }
+        }
+        return entries[entries.length - 1].kind;
+      }
+
+      function hash(value, seed) {
+        const x = Math.sin(value * 127.1 + seed * 311.7) * 43758.5453123;
+        return x - Math.floor(x);
+      }
+
+      function smoothNoise(value, seed) {
+        const i = Math.floor(value);
+        const f = value - i;
+        const a = hash(i, seed);
+        const b = hash(i + 1, seed);
+        const t = f * f * (3 - 2 * f);
+        return lerp(a, b, t) * 2 - 1;
+      }
+
+      function mixColor(a, b, t) {
+        return [
+          Math.round(lerp(a[0], b[0], t)),
+          Math.round(lerp(a[1], b[1], t)),
+          Math.round(lerp(a[2], b[2], t))
+        ];
+      }
+
+      function rgba(color, alpha) {
+        return "rgba(" + color[0] + "," + color[1] + "," + color[2] + "," + alpha + ")";
+      }
+
+      function pointInCanvas(clientX, clientY) {
+        const rect = canvas.getBoundingClientRect();
+        return {
+          x: ((clientX - rect.left) / rect.width) * state.view.w,
+          y: ((clientY - rect.top) / rect.height) * state.view.h
+        };
+      }
+
+      function linePath(points) {
+        ctx.beginPath();
+        ctx.moveTo(points[0].x, points[0].y);
+        for (let i = 1; i < points.length; i += 1) {
+          ctx.lineTo(points[i].x, points[i].y);
+        }
+      }
+
+      function closedPath(points) {
+        ctx.beginPath();
+        ctx.moveTo(points[0].x, points[0].y);
+        for (let i = 1; i < points.length; i += 1) {
+          ctx.lineTo(points[i].x, points[i].y);
+        }
+        ctx.closePath();
+      }
+
+      function watercolorCircle(x, y, r, color, alpha) {
+        ctx.save();
+        ctx.fillStyle = rgba(color, alpha * 0.24);
+        ctx.shadowBlur = r * 0.8;
+        ctx.shadowColor = rgba(color, 0.35);
+        ctx.beginPath();
+        ctx.arc(x + 2, y + 2, r * 1.05, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = rgba(color, alpha * 0.68);
+        ctx.shadowBlur = 0;
+        ctx.beginPath();
+        ctx.arc(x, y, r, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = rgba(color, alpha * 0.92);
+        ctx.beginPath();
+        ctx.arc(x - r * 0.08, y - r * 0.08, r * 0.68, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+
+      function watercolorEllipse(x, y, rx, ry, color, alpha, rotation) {
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(rotation || 0);
+
+        ctx.fillStyle = rgba(color, alpha * 0.22);
+        ctx.shadowBlur = Math.max(rx, ry) * 0.8;
+        ctx.shadowColor = rgba(color, 0.28);
+        ctx.beginPath();
+        ctx.ellipse(2, 2, rx * 1.08, ry * 1.08, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = rgba(color, alpha * 0.66);
+        ctx.shadowBlur = 0;
+        ctx.beginPath();
+        ctx.ellipse(0, 0, rx, ry, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = rgba(color, alpha * 0.92);
+        ctx.beginPath();
+        ctx.ellipse(-rx * 0.06, -ry * 0.06, rx * 0.74, ry * 0.72, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+
+      function watercolorPolygon(points, color, alpha) {
+        let centerX = 0;
+        let centerY = 0;
+        for (const point of points) {
+          centerX += point.x;
+          centerY += point.y;
+        }
+        centerX /= points.length;
+        centerY /= points.length;
+        const corePoints = points.map((point) => ({
+          x: centerX + (point.x - centerX) * 0.88,
+          y: centerY + (point.y - centerY) * 0.88
+        }));
+
+        ctx.save();
+        ctx.translate(2, 2);
+        ctx.fillStyle = rgba(color, alpha * 0.24);
+        ctx.shadowBlur = 12;
+        ctx.shadowColor = rgba(color, 0.3);
+        closedPath(points);
+        ctx.fill();
+
+        ctx.restore();
+        ctx.save();
+        ctx.fillStyle = rgba(color, alpha * 0.68);
+        closedPath(points);
+        ctx.fill();
+
+        ctx.fillStyle = rgba(color, alpha * 0.9);
+        closedPath(corePoints);
+        ctx.fill();
+        ctx.restore();
+      }
+
+      const audio = {
+        available: false,
+        ready: false,
+        started: false,
+        phase: -1,
+        init() {
+          if (!window.Tone || this.ready) {
+            return;
+          }
+
+          this.available = true;
+          this.master = new Tone.Volume(-10).toDestination();
+          this.water = new Tone.Noise("pink").connect(new Tone.Filter(650, "lowpass")).connect(this.master);
+          this.water.volume.value = -24;
+          this.water.start();
+
+          this.piano = new Tone.PolySynth(Tone.Synth, {
+            oscillator: { type: "triangle" },
+            envelope: { attack: 0.02, decay: 0.16, sustain: 0.22, release: 1.4 }
+          }).connect(this.master);
+          this.piano.volume.value = -10;
+
+          this.pad = new Tone.PolySynth(Tone.Synth, {
+            oscillator: { type: "sine" },
+            envelope: { attack: 0.35, decay: 0.3, sustain: 0.5, release: 2.8 }
+          }).connect(this.master);
+          this.pad.volume.value = -19;
+
+          this.bass = new Tone.MonoSynth({
+            oscillator: { type: "triangle" },
+            envelope: { attack: 0.06, decay: 0.14, sustain: 0.2, release: 0.8 },
+            filterEnvelope: { attack: 0.02, decay: 0.3, sustain: 0.1, release: 1, baseFrequency: 120, octaves: 2 }
+          }).connect(this.master);
+          this.bass.volume.value = -20;
+
+          this.pickup = new Tone.FMSynth({
+            harmonicity: 2.8,
+            modulationIndex: 8,
+            envelope: { attack: 0.001, decay: 0.18, sustain: 0.02, release: 0.26 }
+          }).connect(this.master);
+          this.pickup.volume.value = -8;
+
+          this.bump = new Tone.MembraneSynth().connect(this.master);
+          this.bump.volume.value = -8;
+
+          this.pluck = new Tone.PluckSynth().connect(this.master);
+          this.pluck.volume.value = -18;
+
+          this.notes = ["C5", "G4", "A4", "E4", "D5", "G4"];
+          this.seq = new Tone.Sequence((time, note) => {
+            if (this.phase >= 0) {
+              this.piano.triggerAttackRelease(note, "8n", time, 0.52);
+              if (this.phase >= 2) {
+                this.pad.triggerAttackRelease([note, "E4"], "2n", time, 0.12);
+              }
+              if (this.phase >= 3) {
+                this.bass.triggerAttackRelease(note.replace("5", "2").replace("4", "2"), "8n", time, 0.18);
+              }
+            }
+          }, this.notes, "4n");
+          this.seq.humanize = true;
+          Tone.Transport.bpm.value = 74;
+          this.ready = true;
+        },
+        async unlock() {
+          if (!window.Tone) {
+            return;
+          }
+          this.init();
+          if (!this.ready || this.started) {
+            return;
+          }
+          await Tone.start();
+          Tone.Transport.start();
+          this.seq.start(0);
+          this.started = true;
+        },
+        setPhase(phaseIndex) {
+          this.phase = phaseIndex;
+          if (!this.ready) {
+            return;
+          }
+          const waterTarget = [-26, -22, -19, -16][phaseIndex];
+          this.water.volume.rampTo(waterTarget, 2.5);
+          this.pad.volume.rampTo(phaseIndex >= 2 ? -20 : -100, 1.4);
+          this.bass.volume.rampTo(phaseIndex >= 3 ? -18 : -100, 1.2);
+        },
+        play(type) {
+          if (!this.ready || !this.started) {
+            return;
+          }
+          const now = Tone.now();
+          if (type === "star") {
+            this.pickup.triggerAttackRelease("G5", "16n", now, 0.8);
+          } else if (type === "crane") {
+            this.pad.triggerAttackRelease(["C4", "E4", "G4"], "8n", now, 0.22);
+          } else if (type === "frog") {
+            this.pickup.triggerAttackRelease("C4", "8n", now, 0.7);
+          } else if (type === "hit") {
+            this.bump.triggerAttackRelease("C2", "8n", now, 0.8);
+          } else if (type === "ink") {
+            this.bump.triggerAttackRelease("A1", "8n", now, 0.95);
+          } else if (type === "shield") {
+            this.pad.triggerAttackRelease(["G4", "B4", "D5"], "8n", now, 0.18);
+          } else if (type === "whirlpool") {
+            if (!this.lastWhirlpool || now - this.lastWhirlpool > 0.38) {
+              this.lastWhirlpool = now;
+              this.pluck.triggerAttack("C3", now);
+            }
+          } else if (type === "gameover") {
+            this.pad.triggerAttackRelease(["A3", "E4"], "2n", now, 0.18);
+          } else if (type === "thunder") {
+            this.bump.triggerAttackRelease("F1", "4n", now, 1);
+          }
+        }
+      };
+
+      const state = {
+        mode: "title",
+        view: { w: 360, h: 640, dpr: 1 },
+        lastTime: 0,
+        scroll: 0,
+        elapsed: 0,
+        ambientTime: 0,
+        score: 0,
+        best: Number(localStorage.getItem("paper-boat-best") || 0),
+        stars: 0,
+        spawnCursor: 0,
+        rippleTimer: 0,
+        decorativeScroll: 0,
+        themePhase: 0,
+        currentPhase: 0,
+        flash: 0,
+        inkSplash: 0,
+        shake: 0,
+        nextThunder: 10,
+        objects: [],
+        ripples: [],
+        dissolve: [],
+        rain: [],
+        keyboard: { left: false, right: false },
+        pointerX: 180,
+        pointerActive: false,
+        boat: {
+          x: 180,
+          y: 460,
+          vx: 0,
+          dry: CONFIG.dryMax,
+          invulnerability: 0,
+          shieldTimer: 0,
+          shieldCharges: 0,
+          obscured: 0,
+          hitFlash: 0
+        }
+      };
+
+      function createPaperPattern() {
+        const patternCanvas = document.createElement("canvas");
+        patternCanvas.width = 180;
+        patternCanvas.height = 180;
+        const pctx = patternCanvas.getContext("2d");
+        pctx.fillStyle = "rgba(255,255,255,0.12)";
+        pctx.fillRect(0, 0, patternCanvas.width, patternCanvas.height);
+        for (let i = 0; i < 900; i += 1) {
+          const x = Math.random() * patternCanvas.width;
+          const y = Math.random() * patternCanvas.height;
+          const alpha = 0.02 + Math.random() * 0.08;
+          pctx.fillStyle = "rgba(95,72,46," + alpha + ")";
+          pctx.beginPath();
+          pctx.arc(x, y, 0.4 + Math.random() * 1.6, 0, Math.PI * 2);
+          pctx.fill();
+        }
+        for (let i = 0; i < 24; i += 1) {
+          pctx.strokeStyle = "rgba(255,255,255,0.05)";
+          pctx.lineWidth = 1;
+          pctx.beginPath();
+          pctx.moveTo(0, Math.random() * patternCanvas.height);
+          pctx.lineTo(patternCanvas.width, Math.random() * patternCanvas.height);
+          pctx.stroke();
+        }
+        return ctx.createPattern(patternCanvas, "repeat");
+      }
+
+      const paperPattern = createPaperPattern();
+
+      function resize() {
+        const frame = canvas.parentElement;
+        const width = clamp(Math.floor(frame.clientWidth), CONFIG.minWidth, CONFIG.maxWidth);
+        const height = clamp(Math.floor(window.innerHeight), CONFIG.minHeight, 1200);
+        const dpr = clamp(window.devicePixelRatio || 1, 1, 2);
+        state.view.w = width;
+        state.view.h = height;
+        state.view.dpr = dpr;
+        canvas.width = width * dpr;
+        canvas.height = height * dpr;
+        canvas.style.width = width + "px";
+        canvas.style.height = height + "px";
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        state.boat.y = height * CONFIG.boatYRatio;
+        state.boat.x = clamp(state.boat.x, width * 0.2, width * 0.8);
+        state.pointerX = clamp(state.pointerX || width * 0.5, 0, width);
+        resetRain();
+        updateHud();
+      }
+
+      function resetRain() {
+        const target = 150;
+        state.rain = [];
+        for (let i = 0; i < target; i += 1) {
+          state.rain.push({
+            x: Math.random() * state.view.w,
+            y: Math.random() * state.view.h,
+            length: 10 + Math.random() * 14,
+            speed: 420 + Math.random() * 240,
+            alpha: 0.08 + Math.random() * 0.18
+          });
+        }
+      }
+
+      function resetWorld() {
+        state.scroll = 0;
+        state.elapsed = 0;
+        state.score = 0;
+        state.stars = 0;
+        state.spawnCursor = 0;
+        state.rippleTimer = 0;
+        state.flash = 0;
+        state.inkSplash = 0;
+        state.shake = 0;
+        state.nextThunder = 10 + Math.random() * 8;
+        state.objects = [];
+        state.ripples = [];
+        state.dissolve = [];
+        state.currentPhase = 0;
+        state.themePhase = 0;
+        state.boat.x = state.view.w * 0.5;
+        state.pointerX = state.view.w * 0.5;
+        state.boat.vx = 0;
+        state.boat.dry = CONFIG.dryMax;
+        state.boat.invulnerability = 0;
+        state.boat.shieldTimer = 0;
+        state.boat.shieldCharges = 0;
+        state.boat.obscured = 0;
+        state.boat.hitFlash = 0;
+        seedIntroObjects();
+        updateHud();
+      }
+
+      function seedIntroObjects() {
+        for (let i = 0; i < 8; i += 1) {
+          const u = -state.scroll + i * 110 - 180;
+          const sample = riverSample(u, 0);
+          const margin = sample.width * 0.3;
+          const x = sample.center + smoothNoise(u * 0.09, 3.9) * margin;
+          if (i % 3 === 0) {
+            state.objects.push({ kind: "rock", x, u, r: 20 + (i % 2) * 5, wobble: Math.random() * 6, collected: false });
+          } else {
+            state.objects.push({ kind: "star", x, u, r: 12, spin: Math.random() * Math.PI * 2, collected: false });
+          }
+        }
+      }
+
+      function startGame() {
+        resetWorld();
+        state.mode = "running";
+        overlay.classList.add("hidden");
+        audio.unlock();
+      }
+
+      function showTitle() {
+        state.mode = "title";
+        overlay.classList.remove("hidden");
+        overlayTitle.textContent = "Бумажный Кораблик";
+        overlayCopy.textContent = "Веди кораблик по дождевому ручью, собирай бумажных спутников и держись подальше от чернильных клякс.";
+        overlayMeta.textContent = "Мышь или касание двигают кораблик по горизонтали. A/D и стрелки работают как запасной вариант.";
+        overlaySmall.textContent = "Фазы меняют ширину ручья и плотность опасностей: от тротуара до бурной реки.";
+        overlayButton.textContent = "Пустить кораблик";
+      }
+
+      function showGameOver() {
+        const bestBefore = state.best;
+        if (state.score > state.best) {
+          state.best = state.score;
+          localStorage.setItem("paper-boat-best", String(state.best));
+        }
+        updateHud();
+        overlay.classList.remove("hidden");
+        overlayTitle.textContent = state.score > bestBefore ? "Новый рекорд" : "Кораблик размок";
+        overlayCopy.textContent = "Кораблик проплыл " + state.score + " метров. Фаза: " + PHASE_NAMES[state.currentPhase] + ".";
+        overlayMeta.textContent = state.score > bestBefore ? "Золотая кромка на воде не случайна: рекорд обновлён." : "Журавлики сушат бумагу, лягушка держит один бесплатный удар.";
+        overlaySmall.textContent = "Лучший путь: " + state.best + " метров.";
+        overlayButton.textContent = "Ещё раз";
+      }
+
+      function getPhaseIndex(time) {
+        if (time >= CONFIG.phaseBounds[2]) {
+          return 3;
+        }
+        if (time >= CONFIG.phaseBounds[1]) {
+          return 2;
+        }
+        if (time >= CONFIG.phaseBounds[0]) {
+          return 1;
+        }
+        return 0;
+      }
+
+      function getThemePhase(time) {
+        if (time < CONFIG.transitionStarts[0]) {
+          return 0;
+        }
+        if (time < CONFIG.phaseBounds[0]) {
+          return easeInOut((time - CONFIG.transitionStarts[0]) / CONFIG.transitionWindow);
+        }
+        if (time < CONFIG.transitionStarts[1]) {
+          return 1;
+        }
+        if (time < CONFIG.phaseBounds[1]) {
+          return 1 + easeInOut((time - CONFIG.transitionStarts[1]) / CONFIG.transitionWindow);
+        }
+        if (time < CONFIG.transitionStarts[2]) {
+          return 2;
+        }
+        if (time < CONFIG.phaseBounds[2]) {
+          return 2 + easeInOut((time - CONFIG.transitionStarts[2]) / CONFIG.transitionWindow);
+        }
+        return 3;
+      }
+
+      function mixedTheme(value) {
+        const index = Math.floor(value);
+        const next = Math.min(THEMES.length - 1, index + 1);
+        const blend = value - index;
+        const theme = {};
+        for (const key of Object.keys(THEMES[index])) {
+          const a = THEMES[index][key];
+          const b = THEMES[next][key];
+          theme[key] = Array.isArray(a) ? mixColor(a, b, blend) : lerp(a, b, blend);
+        }
+        return theme;
+      }
+
+      function currentParameters(time) {
+        const themeValue = state.mode === "title" ? 0 : getThemePhase(time);
+        const a = Math.floor(themeValue);
+        const b = Math.min(3, a + 1);
+        const t = themeValue - a;
+        let speed = lerp(CONFIG.speed[a], CONFIG.speed[b], t);
+        if (time > CONFIG.phaseBounds[2]) {
+          speed += (time - CONFIG.phaseBounds[2]) * 1.55;
+        }
+        return {
+          speed,
+          riverWidth: lerp(CONFIG.riverWidth[a], CONFIG.riverWidth[b], t),
+          meander: lerp(CONFIG.meander[a], CONFIG.meander[b], t),
+          spawnGap: lerp(CONFIG.baseSpawnGap[a], CONFIG.baseSpawnGap[b], t),
+          collectChance: lerp(CONFIG.collectChance[a], CONFIG.collectChance[b], t),
+          themeValue,
+          phaseIndex: getPhaseIndex(time),
+          theme: mixedTheme(themeValue)
+        };
+      }
+
+      function riverSample(u, time) {
+        const params = currentParameters(time);
+        const centerNoise = smoothNoise(u * 0.0025, 0.73) + smoothNoise(u * 0.0058, 4.2) * 0.42;
+        const widthNoise = smoothNoise(u * 0.0038, 2.1) * 0.08;
+        const center = state.view.w * 0.5 + centerNoise * state.view.w * params.meander;
+        const width = state.view.w * clamp(params.riverWidth + widthNoise, 0.34, 0.92);
+        return {
+          center,
+          width,
+          left: center - width / 2,
+          right: center + width / 2
+        };
+      }
+
+      function spawnRipple(count) {
+        for (let i = 0; i < count; i += 1) {
+          const u = -state.scroll - Math.random() * state.view.h * 0.16;
+          const sample = riverSample(u, state.elapsed);
+          const margin = sample.width * 0.38;
+          state.ripples.push({
+            x: sample.center + (Math.random() * 2 - 1) * margin,
+            u,
+            rx: 10 + Math.random() * 22,
+            ry: 3 + Math.random() * 8,
+            alpha: 0.06 + Math.random() * 0.18,
+            life: 1.6 + Math.random() * 1.2
+          });
+        }
+      }
+
+      function updateRipples(dt) {
+        state.rippleTimer += dt;
+        const cadence = state.mode === "running" ? 0.22 : 0.36;
+        while (state.rippleTimer >= cadence) {
+          state.rippleTimer -= cadence;
+          spawnRipple(state.mode === "running" ? 2 : 1);
+        }
+        state.ripples = state.ripples.filter((ripple) => {
+          ripple.life -= dt;
+          return ripple.life > 0 && ripple.u + state.scroll < state.view.h + 40;
+        });
+      }
+
+      function canPlace(x, u, r) {
+        for (const entity of state.objects) {
+          const dy = Math.abs(entity.u - u);
+          const dx = Math.abs(entity.x - x);
+          if (dy < 96 && dx < entity.r + r + 24) {
+            return false;
+          }
+        }
+        return true;
+      }
+
+      function spawnEntity() {
+        const phaseIndex = state.currentPhase;
+        const isCollectible = Math.random() < currentParameters(state.elapsed).collectChance;
+        const kind = pickWeighted(SPAWN_TABLES[isCollectible ? "collect" : "obstacle"][phaseIndex]);
+        const u = -state.scroll - 140 - Math.random() * 80;
+        const sample = riverSample(u, state.elapsed);
+        let attempts = 0;
+        while (attempts < 10) {
+          attempts += 1;
+          const safeMargin = kind === "leaf" ? 58 : kind === "whirlpool" ? 48 : 30;
+          const x = sample.center + (Math.random() * 2 - 1) * (sample.width / 2 - safeMargin);
+          const r =
+            kind === "rock" ? 18 + Math.random() * 11 :
+            kind === "ink" ? 20 + Math.random() * 14 :
+            kind === "whirlpool" ? 28 + Math.random() * 10 :
+            kind === "leaf" ? 30 + Math.random() * 14 :
+            kind === "frog" ? 14 :
+            kind === "crane" ? 16 :
+            12;
+          if (!canPlace(x, u, r)) {
+            continue;
+          }
+          state.objects.push({
+            kind,
+            x,
+            u,
+            r,
+            wobble: Math.random() * Math.PI * 2,
+            spin: Math.random() * Math.PI * 2,
+            pulse: Math.random() * Math.PI * 2,
+            used: false,
+            collected: false
+          });
+          return;
+        }
+      }
+
+      function updateSpawns() {
+        const params = currentParameters(state.elapsed);
+        while (state.scroll - state.spawnCursor > params.spawnGap) {
+          state.spawnCursor += params.spawnGap;
+          spawnEntity();
+          if (state.currentPhase >= 2 && Math.random() < 0.18) {
+            spawnEntity();
+          }
+        }
+      }
+
+      function damageBoat(type) {
+        if (state.mode !== "running" || state.boat.invulnerability > 0) {
+          return;
+        }
+        if (state.boat.shieldCharges > 0 && state.boat.shieldTimer > 0) {
+          state.boat.shieldCharges = 0;
+          state.boat.shieldTimer = 0;
+          state.flash = Math.max(state.flash, 0.12);
+          audio.play("shield");
+          return;
+        }
+        state.boat.dry -= 1;
+        state.boat.invulnerability = CONFIG.invulnerability;
+        state.boat.hitFlash = 0.5;
+        if (type === "ink") {
+          state.inkSplash = 0.92;
+          audio.play("ink");
+        } else {
+          audio.play("hit");
+        }
+        if (navigator.vibrate) {
+          navigator.vibrate(45);
+        }
+        if (state.boat.dry <= 0) {
+          triggerGameOver();
+        }
+      }
+
+      function collect(entity) {
+        entity.collected = true;
+        if (entity.kind === "star") {
+          state.stars += 1;
+          audio.play("star");
+          state.flash = Math.max(state.flash, 0.06);
+        } else if (entity.kind === "crane") {
+          state.boat.dry = Math.min(CONFIG.dryMax, state.boat.dry + 1);
+          audio.play("crane");
+          state.flash = Math.max(state.flash, 0.08);
+        } else if (entity.kind === "frog") {
+          state.boat.shieldTimer = CONFIG.shieldDuration;
+          state.boat.shieldCharges = 1;
+          audio.play("frog");
+          state.flash = Math.max(state.flash, 0.08);
+        }
+      }
+
+      function triggerGameOver() {
+        if (state.mode !== "running") {
+          return;
+        }
+        state.mode = "dying";
+        state.deathTimer = 1.5;
+        state.score = Math.floor(state.elapsed) + state.stars * 10;
+        state.dissolve = [];
+        for (let i = 0; i < 36; i += 1) {
+          state.dissolve.push({
+            x: state.boat.x + (Math.random() * 2 - 1) * 14,
+            y: state.boat.y + (Math.random() * 2 - 1) * 16,
+            vx: (Math.random() * 2 - 1) * 48,
+            vy: -18 + Math.random() * 60,
+            life: 0.8 + Math.random() * 0.8,
+            size: 3 + Math.random() * 6
+          });
+        }
+        state.flash = 0.18;
+        audio.play("gameover");
+      }
+
+      function updateBoat(dt) {
+        const params = currentParameters(state.elapsed);
+        const sample = riverSample(state.boat.y - state.scroll, state.elapsed);
+        const edgeMargin = 26;
+        let targetX = state.pointerX;
+        if (state.keyboard.left || state.keyboard.right) {
+          const keyboardInput = (state.keyboard.right ? 1 : 0) - (state.keyboard.left ? 1 : 0);
+          targetX = state.boat.x + keyboardInput * 240 * dt;
+        }
+        targetX = clamp(targetX, sample.left + edgeMargin, sample.right - edgeMargin);
+        state.boat.vx += (targetX - state.boat.x) * 12 * dt;
+        state.boat.vx *= Math.pow(0.18, dt);
+        state.boat.x += state.boat.vx * dt * 60;
+        state.boat.x = clamp(state.boat.x, sample.left + edgeMargin, sample.right - edgeMargin);
+        state.boat.invulnerability = Math.max(0, state.boat.invulnerability - dt);
+        state.boat.shieldTimer = Math.max(0, state.boat.shieldTimer - dt);
+        state.boat.obscured = Math.max(0, state.boat.obscured - dt);
+        state.boat.hitFlash = Math.max(0, state.boat.hitFlash - dt);
+        if (params.phaseIndex >= 3 && state.elapsed >= state.nextThunder) {
+          state.shake = 0.28;
+          state.flash = 0.15;
+          state.nextThunder = state.elapsed + 10 + Math.random() * 10;
+          audio.play("thunder");
+        }
+      }
+
+      function updateEntities(dt) {
+        const boatX = state.boat.x;
+        const boatY = state.boat.y;
+        const whirlNear = [];
+        state.objects = state.objects.filter((entity) => {
+          const y = entity.u + state.scroll;
+          entity.spin += dt * 1.6;
+          entity.pulse += dt * 3.2;
+          entity.wobble += dt;
+          if (y > state.view.h + entity.r + 40) {
+            return false;
+          }
+
+          const dx = boatX - entity.x;
+          const dy = boatY - y;
+          const dist = Math.hypot(dx, dy);
+
+          if (entity.kind === "whirlpool") {
+            const pullRadius = entity.r * 2.2;
+            if (dist < pullRadius) {
+              const strength = (1 - dist / pullRadius) * 118 * dt;
+              state.boat.vx += (entity.x - boatX) * strength * 0.04;
+              whirlNear.push(entity);
+            }
+          }
+
+          if (state.mode === "running") {
+            if (entity.kind === "rock" && dist < entity.r + 12) {
+              state.boat.vx += dx >= 0 ? 26 : -26;
+              damageBoat("rock");
+            }
+            if (entity.kind === "ink" && dist < entity.r + 14) {
+              damageBoat("ink");
+            }
+            if (entity.kind === "leaf" && !entity.used && dist < entity.r + 8) {
+              entity.used = true;
+              state.boat.obscured = Math.max(state.boat.obscured, 2.5);
+            }
+            if ((entity.kind === "star" || entity.kind === "crane" || entity.kind === "frog") && !entity.collected && dist < entity.r + 18) {
+              collect(entity);
+            }
+          }
+          return !entity.collected;
+        });
+
+        if (whirlNear.length) {
+          audio.play("whirlpool");
+        }
+      }
+
+      function updateDissolve(dt) {
+        state.dissolve = state.dissolve.filter((particle) => {
+          particle.x += particle.vx * dt;
+          particle.y += particle.vy * dt;
+          particle.vx *= 0.98;
+          particle.vy += 12 * dt;
+          particle.life -= dt;
+          return particle.life > 0;
+        });
+      }
+
+      function updateRain(dt, intensity) {
+        const activeCount = Math.floor(40 + intensity * 120);
+        for (let i = 0; i < state.rain.length; i += 1) {
+          const drop = state.rain[i];
+          if (i >= activeCount) {
+            continue;
+          }
+          drop.x -= drop.speed * 0.22 * dt;
+          drop.y += drop.speed * dt;
+          if (drop.y > state.view.h + 20) {
+            drop.y = -20;
+            drop.x = Math.random() * state.view.w;
+          }
+          if (drop.x < -20) {
+            drop.x = state.view.w + 20;
+          }
+        }
+      }
+
+      function updateScore() {
+        if (state.mode === "running") {
+          state.score = Math.floor(state.elapsed) + state.stars * 10;
+        }
+      }
+
+      function updateHud() {
+        scoreEl.textContent = state.score + " м";
+        drynessEl.textContent = state.boat.dry + " / " + CONFIG.dryMax + (state.boat.shieldCharges > 0 && state.boat.shieldTimer > 0 ? " • щит" : "");
+        bestEl.textContent = state.best + " м";
+      }
+
+      function update(dt) {
+        state.ambientTime += dt;
+        if (state.mode === "title") {
+          state.scroll += 44 * dt;
+          updateRipples(dt);
+          updateRain(dt, 0);
+          state.flash = Math.max(0, state.flash - dt * 0.8);
+          return;
+        }
+
+        if (state.mode === "running") {
+          state.elapsed += dt;
+        }
+
+        state.currentPhase = getPhaseIndex(state.elapsed);
+        state.themePhase = getThemePhase(state.elapsed);
+        audio.setPhase(state.currentPhase);
+
+        if (state.mode === "running") {
+          const params = currentParameters(state.elapsed);
+          state.scroll += params.speed * dt;
+          updateBoat(dt);
+          updateSpawns();
+          updateEntities(dt);
+          updateRipples(dt);
+          updateRain(dt, params.theme.rain);
+          updateScore();
+        } else if (state.mode === "dying") {
+          state.deathTimer -= dt;
+          state.scroll += 38 * dt;
+          updateDissolve(dt);
+          updateRipples(dt);
+          updateRain(dt, currentParameters(state.elapsed).theme.rain);
+          if (state.deathTimer <= 0) {
+            state.mode = "gameover";
+            showGameOver();
+          }
+        }
+
+        state.flash = Math.max(0, state.flash - dt * 0.86);
+        state.inkSplash = Math.max(0, state.inkSplash - dt * 0.55);
+        state.shake = Math.max(0, state.shake - dt * 1.1);
+        updateHud();
+      }
+
+      function drawBackground(theme) {
+        const gradient = ctx.createLinearGradient(0, 0, 0, state.view.h);
+        gradient.addColorStop(0, rgba(theme.bgTop, 1));
+        gradient.addColorStop(1, rgba(theme.bgBottom, 1));
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, state.view.w, state.view.h);
+        if (paperPattern) {
+          ctx.fillStyle = paperPattern;
+          ctx.globalAlpha = 0.34;
+          ctx.fillRect(0, 0, state.view.w, state.view.h);
+          ctx.globalAlpha = 1;
+        }
+      }
+
+      function drawRiver(theme) {
+        const leftPoints = [];
+        const rightPoints = [];
+        const samples = [];
+        const step = 22;
+
+        for (let y = -30; y <= state.view.h + 30; y += step) {
+          const u = y - state.scroll;
+          const sample = riverSample(u, state.elapsed);
+          samples.push({ y, sample, u });
+          leftPoints.push({ x: sample.left, y });
+          rightPoints.push({ x: sample.right, y });
+        }
+
+        const waterGradient = ctx.createLinearGradient(0, 0, 0, state.view.h);
+        waterGradient.addColorStop(0, rgba(theme.waterB, 0.68));
+        waterGradient.addColorStop(1, rgba(theme.waterA, 0.88));
+
+        ctx.fillStyle = waterGradient;
+        ctx.beginPath();
+        ctx.moveTo(leftPoints[0].x, leftPoints[0].y);
+        for (const point of leftPoints) {
+          ctx.lineTo(point.x, point.y);
+        }
+        for (let i = rightPoints.length - 1; i >= 0; i -= 1) {
+          ctx.lineTo(rightPoints[i].x, rightPoints[i].y);
+        }
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.save();
+        ctx.strokeStyle = rgba(theme.waterB, 0.32);
+        ctx.lineWidth = 1.4;
+        for (let i = 0; i < samples.length; i += 2) {
+          const segment = samples[i];
+          const width = segment.sample.width * 0.3;
+          ctx.beginPath();
+          ctx.ellipse(segment.sample.center, segment.y, width * 0.35, 4 + (i % 3), 0, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+        ctx.restore();
+
+        for (const segment of samples) {
+          const edgeNoise = smoothNoise(segment.u * 0.12, 8.7);
+          watercolorCircle(segment.sample.left - 4 + edgeNoise * 2, segment.y, 11 + Math.abs(edgeNoise) * 4, theme.bank, 0.38);
+          watercolorCircle(segment.sample.right + 4 - edgeNoise * 2, segment.y, 11 + Math.abs(edgeNoise) * 4, theme.bank, 0.38);
+
+          if (state.themePhase >= 1.1) {
+            const flowerNoise = hash(Math.floor(segment.u * 0.2), 9.4);
+            if (flowerNoise > 0.74) {
+              watercolorCircle(segment.sample.left - 16, segment.y + 6, 3 + flowerNoise * 4, theme.accentB, 0.44);
+              watercolorCircle(segment.sample.right + 16, segment.y - 5, 3 + flowerNoise * 4, theme.accentA, 0.44);
+            }
+          }
+        }
+
+        ctx.strokeStyle = rgba(theme.bankShadow, 0.45);
+        ctx.lineWidth = 3.5;
+        linePath(leftPoints);
+        ctx.stroke();
+        linePath(rightPoints);
+        ctx.stroke();
+      }
+
+      function drawRipples(theme) {
+        ctx.save();
+        for (const ripple of state.ripples) {
+          const y = ripple.u + state.scroll;
+          const alpha = ripple.alpha * clamp(ripple.life, 0, 1);
+          ctx.strokeStyle = rgba(theme.waterB, alpha);
+          ctx.lineWidth = 1.2;
+          ctx.beginPath();
+          ctx.ellipse(ripple.x, y, ripple.rx, ripple.ry, 0, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+        ctx.restore();
+      }
+
+      function drawRock(entity) {
+        const y = entity.u + state.scroll;
+        watercolorCircle(entity.x, y, entity.r, [122, 108, 99], 0.9);
+        watercolorCircle(entity.x - entity.r * 0.2, y - entity.r * 0.2, entity.r * 0.36, [157, 141, 126], 0.6);
+      }
+
+      function drawInk(entity) {
+        const y = entity.u + state.scroll;
+        const pulse = 1 + Math.sin(entity.pulse) * 0.08;
+        const color = [81, 57, 99];
+        watercolorCircle(entity.x, y, entity.r * pulse, color, 0.78);
+        watercolorCircle(entity.x + entity.r * 0.35, y - entity.r * 0.1, entity.r * 0.35, color, 0.5);
+        watercolorCircle(entity.x - entity.r * 0.3, y + entity.r * 0.2, entity.r * 0.28, color, 0.42);
+      }
+
+      function drawWhirlpool(entity, theme) {
+        const y = entity.u + state.scroll;
+        ctx.save();
+        ctx.translate(entity.x, y);
+        ctx.rotate(entity.spin * 0.3);
+        ctx.strokeStyle = rgba(theme.waterB, 0.68);
+        ctx.lineWidth = 2;
+        for (let i = 0; i < 3; i += 1) {
+          ctx.beginPath();
+          ctx.arc(0, 0, entity.r - i * 9, entity.spin * 0.5 + i, entity.spin * 0.5 + i + Math.PI * 1.4);
+          ctx.stroke();
+        }
+        ctx.restore();
+      }
+
+      function drawLeaf(entity) {
+        const y = entity.u + state.scroll;
+        ctx.save();
+        ctx.translate(entity.x, y);
+        ctx.rotate(Math.sin(entity.wobble) * 0.25);
+        watercolorEllipse(0, 0, entity.r * 0.92, entity.r * 0.56, [116, 150, 84], 0.58, 0.2);
+        ctx.strokeStyle = rgba([86, 102, 52], 0.5);
+        ctx.lineWidth = 1.3;
+        ctx.beginPath();
+        ctx.moveTo(-entity.r * 0.72, -entity.r * 0.1);
+        ctx.quadraticCurveTo(0, 0, entity.r * 0.7, entity.r * 0.12);
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      function drawStar(entity) {
+        const y = entity.u + state.scroll;
+        const points = [];
+        const outer = entity.r;
+        const inner = entity.r * 0.46;
+        for (let i = 0; i < 10; i += 1) {
+          const angle = entity.spin + i * Math.PI / 5 - Math.PI / 2;
+          const radius = i % 2 === 0 ? outer : inner;
+          points.push({
+            x: entity.x + Math.cos(angle) * radius,
+            y: y + Math.sin(angle) * radius
+          });
+        }
+        watercolorPolygon(points, [214, 185, 93], 0.84);
+      }
+
+      function drawCrane(entity) {
+        const y = entity.u + state.scroll;
+        const wing = Math.sin(entity.pulse) * 5;
+        ctx.save();
+        ctx.translate(entity.x, y);
+        ctx.rotate(Math.sin(entity.spin * 0.7) * 0.18);
+        const points = [
+          { x: -16, y: 2 + wing * 0.2 },
+          { x: -4, y: -8 - wing },
+          { x: 3, y: -3 },
+          { x: 16, y: -10 + wing },
+          { x: 6, y: 3 },
+          { x: 0, y: 10 },
+          { x: -7, y: 4 }
+        ];
+        watercolorPolygon(points, [241, 241, 238], 0.84);
+        ctx.strokeStyle = "rgba(100, 105, 120, 0.34)";
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(-2, -1);
+        ctx.lineTo(0, 10);
+        ctx.lineTo(7, 1);
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      function drawFrog(entity) {
+        const y = entity.u + state.scroll;
+        watercolorEllipse(entity.x, y, entity.r * 0.9, entity.r * 0.62, [104, 172, 109], 0.85, 0);
+        watercolorCircle(entity.x - entity.r * 0.42, y - entity.r * 0.5, entity.r * 0.18, [143, 198, 133], 0.74);
+        watercolorCircle(entity.x + entity.r * 0.42, y - entity.r * 0.5, entity.r * 0.18, [143, 198, 133], 0.74);
+      }
+
+      function drawBoat(theme) {
+        if (state.mode === "dying" || state.mode === "gameover") {
+          return;
+        }
+        const wetness = 1 - state.boat.dry / CONFIG.dryMax;
+        const paper = mixColor([248, 245, 238], [171, 174, 180], wetness);
+        const shadow = mixColor([216, 215, 220], [134, 144, 154], wetness);
+        const fold = [121, 130, 144];
+        ctx.save();
+        ctx.translate(state.boat.x, state.boat.y + Math.sin(state.ambientTime * 3.5) * 3);
+        ctx.rotate(Math.sin(state.ambientTime * 4.1 + state.boat.x * 0.01) * 0.06 + state.boat.vx * 0.0008);
+        const hull = [
+          { x: -23, y: 10 },
+          { x: -9, y: -11 },
+          { x: 0, y: -6 },
+          { x: 9, y: -11 },
+          { x: 23, y: 10 },
+          { x: 0, y: 17 }
+        ];
+        watercolorPolygon(hull, shadow, 0.65);
+        watercolorPolygon(hull, paper, clamp(0.76 - wetness * 0.18, 0.36, 0.9));
+        ctx.strokeStyle = rgba(fold, 0.42);
+        ctx.lineWidth = 1.2;
+        ctx.beginPath();
+        ctx.moveTo(-9, -11);
+        ctx.lineTo(0, 17);
+        ctx.lineTo(9, -11);
+        ctx.moveTo(-23, 10);
+        ctx.lineTo(23, 10);
+        ctx.moveTo(-7, 2);
+        ctx.lineTo(0, -6);
+        ctx.lineTo(7, 2);
+        ctx.stroke();
+        if (state.boat.shieldCharges > 0 && state.boat.shieldTimer > 0) {
+          ctx.strokeStyle = "rgba(145, 220, 183, 0.72)";
+          ctx.lineWidth = 2.3;
+          ctx.beginPath();
+          ctx.arc(0, 0, 26 + Math.sin(state.ambientTime * 5) * 2, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+        if (state.boat.invulnerability > 0) {
+          ctx.fillStyle = "rgba(255,255,255," + (state.boat.invulnerability * 0.22) + ")";
+          ctx.beginPath();
+          ctx.arc(0, 0, 30, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.restore();
+      }
+
+      function drawEntities(theme) {
+        for (const entity of state.objects) {
+          if (entity.kind === "rock") {
+            drawRock(entity);
+          } else if (entity.kind === "ink") {
+            drawInk(entity);
+          } else if (entity.kind === "whirlpool") {
+            drawWhirlpool(entity, theme);
+          } else if (entity.kind === "star") {
+            drawStar(entity);
+          } else if (entity.kind === "crane") {
+            drawCrane(entity);
+          } else if (entity.kind === "frog") {
+            drawFrog(entity);
+          }
+        }
+      }
+
+      function drawLeaves() {
+        for (const entity of state.objects) {
+          if (entity.kind === "leaf") {
+            drawLeaf(entity);
+          }
+        }
+      }
+
+      function drawDissolve() {
+        for (const particle of state.dissolve) {
+          ctx.fillStyle = "rgba(248,245,238," + clamp(particle.life * 0.85, 0, 0.85) + ")";
+          ctx.beginPath();
+          ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+
+      function drawRain(theme) {
+        const intensity = theme.rain;
+        if (intensity <= 0.05) {
+          return;
+        }
+        const activeCount = Math.floor(40 + intensity * 120);
+        ctx.save();
+        ctx.lineWidth = 1.1;
+        for (let i = 0; i < activeCount; i += 1) {
+          const drop = state.rain[i];
+          ctx.strokeStyle = "rgba(240,246,255," + drop.alpha + ")";
+          ctx.beginPath();
+          ctx.moveTo(drop.x, drop.y);
+          ctx.lineTo(drop.x - drop.length * 0.34, drop.y + drop.length);
+          ctx.stroke();
+        }
+        ctx.restore();
+      }
+
+      function drawOverlays(theme) {
+        if (state.boat.obscured > 0) {
+          ctx.fillStyle = "rgba(93, 123, 76," + clamp(state.boat.obscured * 0.22, 0.08, 0.26) + ")";
+          ctx.beginPath();
+          ctx.ellipse(state.boat.x + 12, state.boat.y - 6, 80, 44, -0.5, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        if (state.inkSplash > 0) {
+          ctx.save();
+          const alpha = state.inkSplash * 0.18;
+          watercolorCircle(state.view.w * 0.24, state.view.h * 0.22, 78, [68, 46, 84], alpha);
+          watercolorCircle(state.view.w * 0.73, state.view.h * 0.62, 96, [68, 46, 84], alpha * 0.8);
+          watercolorCircle(state.view.w * 0.55, state.view.h * 0.1, 56, [68, 46, 84], alpha * 0.7);
+          ctx.restore();
+        }
+
+        if (state.flash > 0) {
+          ctx.fillStyle = "rgba(255, 251, 243, " + state.flash + ")";
+          ctx.fillRect(0, 0, state.view.w, state.view.h);
+        }
+
+        if (state.score > state.best) {
+          ctx.strokeStyle = "rgba(221, 192, 92, 0.28)";
+          ctx.lineWidth = 14;
+          ctx.strokeRect(7, 7, state.view.w - 14, state.view.h - 14);
+        }
+
+        ctx.fillStyle = rgba(mixColor(theme.bankShadow, [255, 255, 255], 0.35), 0.82);
+        ctx.font = "600 15px Georgia, serif";
+        ctx.fillText(PHASE_NAMES[state.currentPhase], 18, state.view.h - 22);
+      }
+
+      function render() {
+        const theme = currentParameters(state.mode === "title" ? 0 : state.elapsed).theme;
+        ctx.save();
+        const shakeX = state.shake > 0 ? (Math.random() * 2 - 1) * 6 * state.shake : 0;
+        const shakeY = state.shake > 0 ? (Math.random() * 2 - 1) * 6 * state.shake : 0;
+        ctx.setTransform(state.view.dpr, 0, 0, state.view.dpr, shakeX * state.view.dpr, shakeY * state.view.dpr);
+
+        drawBackground(theme);
+        drawRiver(theme);
+        drawRipples(theme);
+        drawEntities(theme);
+        drawBoat(theme);
+        drawLeaves();
+        drawDissolve();
+        drawRain(theme);
+        drawOverlays(theme);
+
+        ctx.restore();
+      }
+
+      function frame(timestamp) {
+        if (!state.lastTime) {
+          state.lastTime = timestamp;
+        }
+        const dt = Math.min(0.033, (timestamp - state.lastTime) / 1000);
+        state.lastTime = timestamp;
+        update(dt);
+        render();
+        requestAnimationFrame(frame);
+      }
+
+      function setPointer(clientX, clientY) {
+        const point = pointInCanvas(clientX, clientY);
+        state.pointerX = point.x;
+      }
+
+      window.addEventListener("resize", resize);
+      overlayButton.addEventListener("click", startGame);
+      canvas.addEventListener("pointerdown", (event) => {
+        setPointer(event.clientX, event.clientY);
+        if (state.mode === "running") {
+          audio.unlock();
+        }
+      });
+      canvas.addEventListener("pointermove", (event) => {
+        setPointer(event.clientX, event.clientY);
+      });
+      canvas.addEventListener("touchstart", (event) => {
+        if (event.touches[0]) {
+          setPointer(event.touches[0].clientX, event.touches[0].clientY);
+          if (state.mode === "running") {
+            audio.unlock();
+          }
+        }
+      }, { passive: true });
+      canvas.addEventListener("touchmove", (event) => {
+        if (event.touches[0]) {
+          setPointer(event.touches[0].clientX, event.touches[0].clientY);
+        }
+      }, { passive: true });
+
+      window.addEventListener("keydown", (event) => {
+        if (event.key === "ArrowLeft" || event.key === "a" || event.key === "A") {
+          state.keyboard.left = true;
+        }
+        if (event.key === "ArrowRight" || event.key === "d" || event.key === "D") {
+          state.keyboard.right = true;
+        }
+        if (event.key === " " && (state.mode === "title" || state.mode === "gameover")) {
+          event.preventDefault();
+          startGame();
+        }
+      });
+
+      window.addEventListener("keyup", (event) => {
+        if (event.key === "ArrowLeft" || event.key === "a" || event.key === "A") {
+          state.keyboard.left = false;
+        }
+        if (event.key === "ArrowRight" || event.key === "d" || event.key === "D") {
+          state.keyboard.right = false;
+        }
+      });
+
+      resize();
+      resetWorld();
+      showTitle();
+      requestAnimationFrame(frame);
+    }());
+  </script>
+</body>
+</html>

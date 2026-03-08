@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Латунь и Бархат</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <canvas id="game" aria-label="Латунь и Бархат"></canvas>
+
+  <div id="overlay" class="overlay hidden" aria-live="polite">
+    <div class="overlay-panel">
+      <div class="overlay-kicker">Brass & Velvet</div>
+      <h1>Механизм заглох</h1>
+      <p id="final-score">Счет: 0</p>
+      <button id="restart-button" type="button">Перезапустить</button>
+    </div>
+  </div>
+
+  <script type="module" src="game.js"></script>
+</body>
+</html>
